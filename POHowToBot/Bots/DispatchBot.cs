@@ -51,7 +51,7 @@ namespace POHowToBot.Bots
         {
             switch (intent)
             {
-                case "q_POKB":
+                case "POHowTo":
                     await AnswerPOQnA(turnContext, recognizerResult.Properties["luisResult"] as LuisResult, cancellationToken);
                     break;
                 case "PO_Enquiry":
@@ -67,26 +67,6 @@ namespace POHowToBot.Bots
         {
             var card = new AdaptiveCards.AdaptiveCard(new AdaptiveSchemaVersion(1, 0));
             //var pictureUrl = "";
-
-            card.Body.Add(new AdaptiveTextBlock()
-            {
-                Text = "Purchase Order Help"
-            });
-
-            //card.BackgroundImage.Url.LocalPath
-
-            card.Body.Add(new AdaptiveImage()
-            {
-                Type = "Image",
-                //Url = $"data:image/png;base64,{robot.jpg}"
-                Size = AdaptiveImageSize.Medium
-            });
-
-            card.Body.Add(new AdaptiveTextBlock()
-            {
-                Text = "Thank you, hope this helps...",
-                Color = AdaptiveTextColor.Accent
-            });
 
             var options = new QnAMakerOptions { Top = 1 };
             var response = await myBotServices.POHowToQnA.GetAnswersAsync(turnContext, options);
@@ -117,7 +97,7 @@ namespace POHowToBot.Bots
             }
             else
             {
-                await turnContext.SendActivityAsync(MessageFactory.Text("No anwers found from KB"), cancellationToken);
+                await turnContext.SendActivityAsync(MessageFactory.Text("Please contact Fred for more help"), cancellationToken);
             }
 
             //Attachment attach = new Attachment()
