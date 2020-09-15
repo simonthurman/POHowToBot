@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using POHowToBot.Bots;
+using POHowToBot.Dialogs;
 
 namespace POHowToBot
 {
@@ -35,8 +36,23 @@ namespace POHowToBot
             //Create the Bot Services (Luis & QnA)
             services.AddSingleton<IBotService, BotService>();
 
+            //********************************************
+            // Create the storage we'll be using for User and Conversation state. (Memory is great for testing purposes.)
+            services.AddSingleton<IStorage, MemoryStorage>();
+
+            // Create the User state. (Used in this bot's Dialog implementation.)
+            services.AddSingleton<UserState>();
+
+            //Dialog to be used by the bot
+            services.AddSingleton<RootDialog>();
+
+            services.AddSingleton<ConversationState>();
+
+            //********************************************
+
             // Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
-            services.AddTransient<IBot, DispatchBot>();
+            //services.AddTransient<IBot, DispatchBot>();
+            services.AddTransient<IBot, DispatchBot<RootDialog>>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

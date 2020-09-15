@@ -7,22 +7,40 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
-
 using Microsoft.Bot.Builder.AI.QnA;
 using Microsoft.Azure.CognitiveServices.Language.LUIS.Runtime.Models;
 using AdaptiveCards;
 
 namespace POHowToBot.Bots
 {
-    public class DispatchBot : ActivityHandler
+    public class DispatchBot<T> : ActivityHandler where T : Microsoft.Bot.Builder.Dialogs.Dialog
     {
         private readonly IBotService myBotServices;
+        protected readonly BotState ConversationState;
+        protected readonly Dialog Dialog;
+        protected readonly BotState UserState;
 
-        public DispatchBot(IBotService botServices)
+        public DispatchBot(IBotService botServices, ConversationState conversationState, UserState userState, T dialog)
         {
             myBotServices = botServices;
+
+            ConversationState = conversationState;
+            UserState = userState;
+            Dialog = dialog;
         }
+
+        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            await base.OnTurnAsync(turnContext, cancellationToken);
+
+            // Save any state changes that might have occurred during the turn.
+            await ConversationState.SaveChangesAsync(turnContext, false, cancellationToken);
+            await UserState.SaveChangesAsync(turnContext, false, cancellationToken);
+        }
+        //*********************************************
+
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             //use dispatch model to figure our which service
@@ -65,58 +83,18 @@ namespace POHowToBot.Bots
 
         private async Task AnswerPOQnA(ITurnContext<IMessageActivity> turnContext, LuisResult luisResult, CancellationToken cancellationToken)
         {
-            var card = new AdaptiveCards.AdaptiveCard(new AdaptiveSchemaVersion(1, 0));
-            //var pictureUrl = "";
-
             var options = new QnAMakerOptions { Top = 1 };
             var response = await myBotServices.POHowToQnA.GetAnswersAsync(turnContext, options);
 
             if (response != null && response.Length > 0)
             {
-
-                card.Body.Add(new AdaptiveTextBlock()
-                {
-                    Text = response[0].Answer,
-                    Color = AdaptiveTextColor.Accent
-                });
-
-                Attachment attach = new Attachment()
-                {
-                    ContentType = AdaptiveCard.ContentType,
-                    Content = card
-                };
-
-                var msg = MessageFactory.Attachment(new Attachment
-                {
-                    ContentType = AdaptiveCard.ContentType,
-                    Content = card
-                });
-
-                await turnContext.SendActivityAsync(msg, cancellationToken);
-
+                await Dialog.RunAsync(turnContext, ConversationState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
             }
             else
             {
                 await turnContext.SendActivityAsync(MessageFactory.Text("Please contact Fred for more help"), cancellationToken);
             }
 
-            //Attachment attach = new Attachment()
-            //{
-            //    ContentType = AdaptiveCard.ContentType,
-            //    Content = card
-            //};
-
-            //var options = new QnAMakerOptions { Top = 1 };
-            //var response = await myBotServices.POHowToQnA.GetAnswersAsync(turnContext, options);
-
-            //if (response != null && response.Length > 0)
-            //{
-            //    await turnContext.SendActivityAsync(MessageFactory.Text(response[0].Answer), cancellationToken);
-            //}
-            //else
-            //{
-            //    await turnContext.SendActivityAsync(MessageFactory.Text("No anwers found from KB"), cancellationToken);
-            //}
         }
 
         private async Task ProcessPOEnquiry(ITurnContext<IMessageActivity> turnContext, LuisResult luisResult, CancellationToken cancellationToken)
