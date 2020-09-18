@@ -11,11 +11,12 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Bot.Builder.AI.QnA;
 using Microsoft.Azure.CognitiveServices.Language.LUIS.Runtime.Models;
-using AdaptiveCards;
+using Microsoft.Extensions.Configuration;
+using System;
 
 namespace POHowToBot.Bots
 {
-    public class DispatchBot<T> : ActivityHandler where T : Microsoft.Bot.Builder.Dialogs.Dialog
+    public class DispatchBot<T> : ActivityHandler where T : Dialog
     {
         private readonly IBotService myBotServices;
         protected readonly BotState ConversationState;
@@ -31,6 +32,13 @@ namespace POHowToBot.Bots
             Dialog = dialog;
         }
 
+        private IConfiguration configuration;
+
+        //public DispatchBot(IConfiguration config)
+        //{
+        //    var PBUrl = config["PowerBIUrl"];
+        //}
+
         public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             await base.OnTurnAsync(turnContext, cancellationToken);
@@ -39,8 +47,7 @@ namespace POHowToBot.Bots
             await ConversationState.SaveChangesAsync(turnContext, false, cancellationToken);
             await UserState.SaveChangesAsync(turnContext, false, cancellationToken);
         }
-        //*********************************************
-
+     
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             //use dispatch model to figure our which service
@@ -72,7 +79,7 @@ namespace POHowToBot.Bots
                 case "POHowTo":
                     await AnswerPOQnA(turnContext, recognizerResult.Properties["luisResult"] as LuisResult, cancellationToken);
                     break;
-                case "PO_Enquiry":
+                case "POEnquiry":
                     await ProcessPOEnquiry(turnContext, recognizerResult.Properties["luisResult"] as LuisResult, cancellationToken);
                     break;
                 default:
@@ -99,7 +106,16 @@ namespace POHowToBot.Bots
 
         private async Task ProcessPOEnquiry(ITurnContext<IMessageActivity> turnContext, LuisResult luisResult, CancellationToken cancellationToken)
         {
-            await turnContext.SendActivityAsync(MessageFactory.Text("Use Power BI"), cancellationToken);
+            var builder = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json")
+            .AddEnvironmentVariables();
+
+            var Configuration = builder.Build();
+
+            var PBUrl = Configuration.GetSection("PowerBIUrl");
+            var PBUrlstring = PBUrl.Value;
+            Uri convertedUri = new Uri(PBUrlstring);
+            await turnContext.SendActivityAsync(MessageFactory.Text($"Please use Power BI {convertedUri}" ), cancellationToken);
         }
     }
 }

@@ -36,7 +36,6 @@ namespace POHowToBot
             //Create the Bot Services (Luis & QnA)
             services.AddSingleton<IBotService, BotService>();
 
-            //********************************************
             // Create the storage we'll be using for User and Conversation state. (Memory is great for testing purposes.)
             services.AddSingleton<IStorage, MemoryStorage>();
 
@@ -48,10 +47,7 @@ namespace POHowToBot
 
             services.AddSingleton<ConversationState>();
 
-            //********************************************
-
             // Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
-            //services.AddTransient<IBot, DispatchBot>();
             services.AddTransient<IBot, DispatchBot<RootDialog>>();
         }
 

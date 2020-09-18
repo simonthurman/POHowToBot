@@ -13,8 +13,6 @@ namespace POHowToBot
     {
         public BotService(IConfiguration configuration)
         {
-
-
             var luisApplication = new LuisApplication(
                 configuration["LuisAppId"],
                 configuration["LuisAPIKey"],
