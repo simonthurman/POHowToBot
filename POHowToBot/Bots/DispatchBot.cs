@@ -113,9 +113,9 @@ namespace POHowToBot.Bots
             var Configuration = builder.Build();
 
             var PBUrl = Configuration.GetSection("PowerBIUrl");
-            var PBUrlstring = PBUrl.Value;
-            Uri convertedUri = new Uri(PBUrlstring);
-            await turnContext.SendActivityAsync(MessageFactory.Text($"Please use Power BI {convertedUri}" ), cancellationToken);
+            Uri convertedUrl = new Uri(PBUrl.Value);
+            await turnContext.SendActivityAsync(MessageFactory.Text($"Please use Power BI {convertedUrl}" ), cancellationToken);
+
         }
     }
 }
